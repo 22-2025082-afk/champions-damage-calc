@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokémon Champions Damage Calculator</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="header">
+        <h1>Pokémon Champions Damage Calculator</h1>
+        <p>Version 0.1.0</p>
+    </header>
+
+    <main class="container">
+
+        <!-- 攻撃側 -->
+        <section class="card" id="attacker-card">
+            <h2>攻撃側</h2>
+
+            <div class="form-group">
+                <label for="attacker-pokemon">ポケモン</label>
+                <input
+                    type="text"
+                    id="attacker-pokemon"
+                    placeholder="ポケモン名を入力">
+            </div>
+
+            <div class="form-group">
+                <label for="attacker-nature">性格</label>
+                <select id="attacker-nature"></select>
+            </div>
+
+            <div id="attacker-stats">
+                <!-- 次回追加 -->
+            </div>
+
+        </section>
+
+        <!-- 防御側 -->
+        <section class="card" id="defender-card">
+
+            <h2>防御側</h2>
+
+            <div class="form-group">
+                <label for="defender-pokemon">ポケモン</label>
+                <input
+                    type="text"
+                    id="defender-pokemon"
+                    placeholder="ポケモン名を入力">
+            </div>
+
+            <div class="form-group">
+                <label for="defender-nature">性格</label>
+                <select id="defender-nature"></select>
+            </div>
+
+            <div id="defender-stats">
+                <!-- 次回追加 -->
+            </div>
+
+        </section>
+
+        <!-- 技 -->
+        <section class="card full-width">
+
+            <h2>技</h2>
+
+            <div class="form-group">
+                <label for="move-name">技</label>
+                <input
+                    type="text"
+                    id="move-name"
+                    placeholder="技名を入力">
+            </div>
+
+        </section>
+
+        <!-- 場 -->
+        <section class="card full-width">
+
+            <h2>場の状態</h2>
+
+            <p>※次回実装</p>
+
+        </section>
+
+        <!-- 結果 -->
+        <section class="card full-width">
+
+            <h2>ダメージ結果</h2>
+
+            <div id="damage-result">
+
+                ダメージ計算前です。
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <script type="module" src="js/main.js"></script>
+
+</body>
+</html>
