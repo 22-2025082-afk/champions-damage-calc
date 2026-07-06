@@ -1,62 +1,94 @@
 /*
 =========================================
-damage.js（強化版）
-Pokémon Champions Damage System
+damage.js（最終統合版）
+Pokémon Champions Damage Engine
 Version 0.1.0
 =========================================
 */
 
 /*
 -----------------------------------------
-ダメージ計算メイン
+メインダメージ計算
 -----------------------------------------
 */
-function calcDamage(params) {
+function calcDamageFull(params) {
 
     const {
         level = 50,
-        power = 80,
-        attack = 100,
-        defense = 100,
-        stab = 1.0,
-        type = 1.0,
-        random = true
+        move,
+        attacker,
+        defender,
+        attackStat,
+        defenseStat,
+        natureMultiplier = 1.0
     } = params;
 
-    // 基本計算
+    if (!move || !attacker || !defender) return 0;
+
+    // STAB
+    const stab = getSTAB(move.type, attacker.types);
+
+    // タイプ相性
+    const type = getTypeMultiplier(move.type, defender.types);
+
+    // ベース計算
     let base =
         Math.floor(
             Math.floor(
-                Math.floor((2 * level) / 5 + 2) * power * attack / defense
+                Math.floor((2 * level) / 5 + 2) *
+                move.power *
+                attackStat /
+                defenseStat
             ) / 50
         ) + 2;
 
-    // 補正
-    let modifier = stab * type;
+    // 全補正
+    let modifier = stab * type * natureMultiplier;
 
     let damage = base * modifier;
 
-    // 乱数（85%〜100%）
-    if (random) {
-        const rand = Math.floor(Math.random() * 16) + 85;
-        damage = damage * rand / 100;
-    }
+    // 乱数（85〜100%）
+    const rand = Math.floor(Math.random() * 16) + 85;
+    damage = damage * rand / 100;
 
     return Math.floor(damage);
 }
 
 /*
 -----------------------------------------
-タイプ相性（仮）
+タイプ相性（強化版）
 -----------------------------------------
 */
 function getTypeMultiplier(moveType, defenderTypes = []) {
 
-    // 超簡易版（あとで拡張）
-    if (defenderTypes.includes("fire") && moveType === "water") return 2;
-    if (defenderTypes.includes("water") && moveType === "electric") return 2;
+    let multiplier = 1;
 
-    return 1;
+    defenderTypes.forEach(type => {
+
+        // 超簡易版（後で完全化可能）
+        if (moveType === "fire" && type === "grass") multiplier *= 2;
+        if (moveType === "water" && type === "fire") multiplier *= 2;
+        if (moveType === "electric" && type === "water") multiplier *= 2;
+
+        if (moveType === "fire" && type === "water") multiplier *= 0.5;
+        if (moveType === "grass" && type === "fire") multiplier *= 0.5;
+        if (moveType === "electric" && type === "ground") multiplier *= 0;
+
+    });
+
+    return multiplier;
+}
+
+/*
+-----------------------------------------
+STAB
+-----------------------------------------
+*/
+function getSTAB(moveType, types) {
+
+    if (!types) return 1.0;
+
+    return types.includes(moveType) ? 1.5 : 1.0;
 }
 
 /*
@@ -76,21 +108,7 @@ function getNatureMultiplier(nature, statType) {
 
 /*
 -----------------------------------------
-STAB（タイプ一致）
------------------------------------------
-*/
-function getSTAB(moveType, pokemonTypes) {
-
-    if (!pokemonTypes) return 1.0;
-
-    if (pokemonTypes.includes(moveType)) return 1.5;
-
-    return 1.0;
-}
-
-/*
------------------------------------------
-結果表示
+ダメージレンジ表示
 -----------------------------------------
 */
 function showDamageResult(min, max) {
@@ -109,19 +127,19 @@ function showDamageResult(min, max) {
 
 /*
 -----------------------------------------
-テスト用（単体確認）
+簡易実行（テスト用）
 -----------------------------------------
 */
-function testDamage() {
+function testFullDamage() {
 
-    const dmg = calcDamage({
+    const dmg = calcDamageFull({
         level: 50,
-        power: 80,
-        attack: 120,
-        defense: 100,
-        stab: 1.5,
-        type: 1.0,
-        random: true
+        move: getMove("かえんほうしゃ"),
+        attacker: getPokemon("リザードン"),
+        defender: getPokemon("ミミッキュ"),
+        attackStat: 120,
+        defenseStat: 100,
+        natureMultiplier: 1.1
     });
 
     showDamageResult(
