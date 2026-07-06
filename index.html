@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokémon Champions Damage Calculator</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <h1>Pokémon Champions Damage Calculator</h1>
+</header>
+
+<main class="container">
+
+    <section class="card">
+        <h2>攻撃側</h2>
+
+        <label>ポケモン</label>
+        <input id="attackerPokemon" type="text" placeholder="ポケモン名">
+
+        <label>性格</label>
+        <select id="attackerNature"></select>
+
+        <label>能力ポイント</label>
+        <input id="attackerEV" type="number" value="0" min="0" max="252">
+
+    </section>
+
+    <section class="card">
+        <h2>防御側</h2>
+
+        <label>ポケモン</label>
+        <input id="defenderPokemon" type="text" placeholder="ポケモン名">
+
+        <label>性格</label>
+        <select id="defenderNature"></select>
+
+        <label>能力ポイント</label>
+        <input id="defenderEV" type="number" value="0" min="0" max="252">
+
+    </section>
+
+    <section class="card">
+
+        <h2>技</h2>
+
+        <input id="moveName" type="text" placeholder="技名">
+
+        <button id="calcButton">
+            ダメージ計算
+        </button>
+
+    </section>
+
+    <section class="card">
+
+        <h2>結果</h2>
+
+        <div id="result">
+            ダメージ結果がここに表示されます。
+        </div>
+
+    </section>
+
+</main>
+
+<script src="script.js"></script>
+
+</body>
+</html>
