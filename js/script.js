@@ -1,7 +1,7 @@
 /*
 =========================================
-script.js（接続パート）
-Pokémon Champions Damage Calculator
+script.js（最終接続）
+Pokémon Champions
 Version 0.1.0
 =========================================
 */
@@ -15,18 +15,16 @@ window.addEventListener("load", initApp);
 */
 function initApp() {
 
-    console.log("App init v0.1.0");
+    console.log("App ready");
 
     bindPokemonInputs();
-
+    bindMoveInput();
     bindSliders();
-
-    console.log("初期化完了");
 }
 
 /*
 -----------------------------------------
-ポケモン入力 → stats.jsへ接続
+ポケモン入力
 -----------------------------------------
 */
 function bindPokemonInputs() {
@@ -34,17 +32,13 @@ function bindPokemonInputs() {
     const attacker = document.getElementById("attackerPokemon");
     const defender = document.getElementById("defenderPokemon");
 
-    if (attacker) {
-        attacker.addEventListener("change", () => {
-            handlePokemon("attacker", attacker.value);
-        });
-    }
+    attacker.addEventListener("change", () => {
+        handlePokemon("attacker", attacker.value);
+    });
 
-    if (defender) {
-        defender.addEventListener("change", () => {
-            handlePokemon("defender", defender.value);
-        });
-    }
+    defender.addEventListener("change", () => {
+        handlePokemon("defender", defender.value);
+    });
 }
 
 /*
@@ -57,18 +51,35 @@ function handlePokemon(target, name) {
     const p = getPokemon(name);
 
     if (!p) {
-        console.log("見つからない:", name);
+        console.log("未発見:", name);
         return;
     }
 
     setPokemon(target, p);
 
-    updateDamage();
+    updateUI();
 }
 
 /*
 -----------------------------------------
-スライダー接続
+技入力（追加）
+-----------------------------------------
+*/
+function bindMoveInput() {
+
+    const moveInput = document.getElementById("moveName");
+
+    if (!moveInput) return;
+
+    moveInput.addEventListener("change", () => {
+
+        updateUI();
+    });
+}
+
+/*
+-----------------------------------------
+スライダー
 -----------------------------------------
 */
 function bindSliders() {
@@ -81,50 +92,70 @@ function bindSliders() {
         const target = e.target.dataset.target;
         const value = Number(e.target.value);
 
-        if (typeof setPoint === "function") {
-            setPoint(target, stat, value);
-        }
+        setPoint(target, stat, value);
 
-        updateDamage();
+        updateUI();
     });
 }
 
 /*
 -----------------------------------------
-ダメージ更新
+UI更新（完全統合）
 -----------------------------------------
 */
-function updateDamage() {
+function updateUI() {
 
-    const atk = getState().pokemon.attacker;
-    const def = getState().pokemon.defender;
+    const state = getState();
+
+    const atk = state.pokemon.attacker;
+    const def = state.pokemon.defender;
 
     if (!atk || !def) return;
 
-    const attackStat = calcStat(
-        atk.attack,
-        "attacker",
-        "attack",
-        1.0
-    );
+    const moveName = document.getElementById("moveName")?.value;
+    const move = getMove(moveName);
 
-    const defenseStat = calcStat(
-        def.defense,
-        "defender",
-        "defense",
-        1.0
-    );
+    if (!move) return;
 
-    const dmg = calcDamage({
+    const attackStat = calcStat(atk.attack, "attacker", "attack", 1.0);
+    const defenseStat = calcStat(def.defense, "defender", "defense", 1.0);
+
+    const dmg = calcDamageFull({
         level: 50,
-        power: 80,
-        attack: attackStat,
-        defense: defenseStat,
-        modifier: 1.0
+        move,
+        attacker: atk,
+        defender: def,
+        attackStat,
+        defenseStat,
+        natureMultiplier: 1.0
     });
 
-    showDamageResult({
-        min: Math.floor(dmg * 0.85),
-        max: dmg
-    });
+    showDamageResult(
+        Math.floor(dmg * 0.85),
+        dmg
+    );
+
+    updateDisplay(state);
+}
+
+/*
+-----------------------------------------
+表示更新
+-----------------------------------------
+*/
+function updateDisplay(state) {
+
+    const el = document.getElementById("damageResult");
+
+    const atk = state.pokemon.attacker;
+    const def = state.pokemon.defender;
+
+    if (!atk || !def) return;
+
+    el.innerHTML = `
+        <div>
+            <p>攻撃: ${atk.name}</p>
+            <p>防御: ${def.name}</p>
+        </div>
+    `;
 }
