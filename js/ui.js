@@ -1,7 +1,7 @@
 /*
 =========================================
-ui.js
-UI制御（Pokémon Champions）
+ui.js（強化版）
+Pokémon Champions UI
 Version 0.1.0
 =========================================
 */
@@ -15,30 +15,29 @@ window.addEventListener("load", initUI);
 */
 function initUI() {
 
-    console.log("UI初期化開始");
+    console.log("UI init");
 
     setupStatsUI();
-
+    updateAllUI();
 }
 
 /*
 -----------------------------------------
-能力ポイントUI生成
+スライダーUI生成
 -----------------------------------------
 */
 function setupStatsUI() {
 
-    const attacker = document.getElementById("attackerStats");
-    const defender = document.getElementById("defenderStats");
+    const targets = ["attacker", "defender"];
 
-    if (!attacker || !defender) return;
+    targets.forEach(t => {
 
-    attacker.innerHTML = createStatControls("attacker");
-    defender.innerHTML = createStatControls("defender");
+        const el = document.getElementById(t + "Stats");
 
-    attachEvents();
+        if (!el) return;
 
-    updateUI();
+        el.innerHTML = createStatUI(t);
+    });
 }
 
 /*
@@ -46,7 +45,7 @@ function setupStatsUI() {
 ステータスUI生成
 -----------------------------------------
 */
-function createStatControls(prefix) {
+function createStatUI(target) {
 
     const labels = {
         hp: "HP",
@@ -57,87 +56,143 @@ function createStatControls(prefix) {
         speed: "素早さ"
     };
 
-    let html = "";
+    let html = `<div class="stat-block">`;
 
     for (let key in labels) {
 
         html += `
         <div class="form-group">
             <label>${labels[key]}</label>
-            <input
-                type="range"
+
+            <input type="range"
                 min="0"
                 max="32"
                 value="0"
                 data-stat="${key}"
-                data-target="${prefix}">
-            <span id="${prefix}-${key}-value">0</span>
+                data-target="${target}">
+
+            <div>
+                値: <span id="${target}-${key}-value">0</span>
+            </div>
         </div>
         `;
     }
+
+    html += `</div>`;
 
     return html;
 }
 
 /*
 -----------------------------------------
-イベント付与
+イベント登録
 -----------------------------------------
 */
-function attachEvents() {
+document.addEventListener("input", (e) => {
 
-    const sliders = document.querySelectorAll("input[type='range']");
+    if (e.target.type !== "range") return;
 
-    sliders.forEach(slider => {
+    const stat = e.target.dataset.stat;
+    const target = e.target.dataset.target;
+    const value = Number(e.target.value);
 
-        slider.addEventListener("input", function () {
+    if (typeof setPoint === "function") {
+        setPoint(target, stat, value);
+    }
 
-            const stat = this.dataset.stat;
-            const target = this.dataset.target;
-            const value = Number(this.value);
+    updateStatLabel(target, stat, value);
+    updateAllUI();
+});
 
-            updateStat(target, stat, value);
+/*
+-----------------------------------------
+数値更新
+-----------------------------------------
+*/
+function updateStatLabel(target, stat, value) {
 
-        });
+    const el = document.getElementById(`${target}-${stat}-value`);
 
+    if (el) {
+        el.textContent = value;
+    }
+}
+
+/*
+-----------------------------------------
+UI全体更新
+-----------------------------------------
+*/
+function updateAllUI() {
+
+    const state = getState ? getState() : null;
+
+    if (!state) return;
+
+    updatePointDisplay(state);
+    updatePokemonDisplay(state);
+}
+
+/*
+-----------------------------------------
+ポイント表示
+-----------------------------------------
+*/
+function updatePointDisplay(state) {
+
+    ["attacker", "defender"].forEach(t => {
+
+        const el = document.getElementById(t + "Stats");
+
+        if (!el) return;
+
+        const points = state.points[t];
+
+        let total = 0;
+
+        for (let k in points) {
+            total += points[k];
+        }
+
+        const info = el.querySelector(".stat-block");
+
+        if (info) {
+            let old = el.querySelector(".point-info");
+
+            if (!old) {
+                old = document.createElement("div");
+                old.className = "point-info";
+                info.prepend(old);
+            }
+
+            old.textContent = `合計ポイント: ${total} / 66`;
+        }
     });
 }
 
 /*
 -----------------------------------------
-ステータス更新
+ポケモン表示
 -----------------------------------------
 */
-function updateStat(target, stat, value) {
+function updatePokemonDisplay(state) {
 
-    // stats.js の関数を使う想定
-    if (typeof setPoint === "function") {
-        setPoint(stat, value);
+    const atk = state.pokemon.attacker;
+    const def = state.pokemon.defender;
+
+    const el = document.getElementById("damageResult");
+
+    if (!el) return;
+
+    if (!atk || !def) {
+        el.innerHTML = "ポケモンを選択してください";
+        return;
     }
 
-    const label = document.getElementById(`${target}-${stat}-value`);
-    if (label) {
-        label.textContent = value;
-    }
-
-    updateUI();
-}
-
-/*
------------------------------------------
-UI更新
------------------------------------------
-*/
-function updateUI() {
-
-    const info = document.getElementById("damageResult");
-
-    if (!info) return;
-
-    const total = (typeof getTotalPoints === "function")
-        ? getTotalPoints()
-        : 0;
-
-    info.textContent = `使用ポイント: ${total} / 66`;
-
+    el.innerHTML = `
+        <div>
+            <p>攻撃側: ${atk.name}</p>
+            <p>防御側: ${def.name}</p>
+        </div>
+    `;
 }
