@@ -1,90 +1,171 @@
 /*
 =========================================
-stats.js
-能力値計算（Pokémon Champions用）
+stats.js（強化版）
+能力値・種族値・ポイント管理
 Version 0.1.0
 =========================================
 */
 
 /*
 -----------------------------------------
-能力ポイント上限
+定数
 -----------------------------------------
 */
 const MAX_TOTAL_POINTS = 66;
 const MAX_PER_STAT = 32;
 
-/*
------------------------------------------
-能力値のベース構造
------------------------------------------
-*/
-const stats = ["hp", "attack", "defense", "spattack", "spdefense", "speed"];
+const STAT_KEYS = ["hp", "attack", "defense", "spattack", "spdefense", "speed"];
 
 /*
 -----------------------------------------
-能力ポイントを保持するオブジェクト
+状態管理
 -----------------------------------------
 */
-let pointData = {
-    hp: 0,
-    attack: 0,
-    defense: 0,
-    spattack: 0,
-    spdefense: 0,
-    speed: 0
+let state = {
+    pokemon: {
+        attacker: null,
+        defender: null
+    },
+
+    points: {
+        attacker: initEmptyStats(),
+        defender: initEmptyStats()
+    }
 };
 
 /*
 -----------------------------------------
-合計ポイントを計算
+初期化
 -----------------------------------------
 */
-function getTotalPoints() {
+function initEmptyStats() {
+
+    const obj = {};
+
+    STAT_KEYS.forEach(k => {
+        obj[k] = 0;
+    });
+
+    return obj;
+}
+
+/*
+-----------------------------------------
+ポケモンセット
+-----------------------------------------
+*/
+function setPokemon(target, pokemon) {
+
+    if (!state.pokemon[target]) return;
+
+    state.pokemon[target] = pokemon;
+
+    console.log(`${target} ポケモン設定:`, pokemon);
+}
+
+/*
+-----------------------------------------
+ポイント更新
+-----------------------------------------
+*/
+function setPoint(target, stat, value) {
+
+    if (!state.points[target]) return;
+    if (!STAT_KEYS.includes(stat)) return;
+
+    value = Math.max(0, Math.min(MAX_PER_STAT, value));
+
+    state.points[target][stat] = value;
+
+    // 合計制限チェック
+    enforceTotalLimit(target);
+
+    updateUIStats(target);
+}
+
+/*
+-----------------------------------------
+合計制限（66）
+-----------------------------------------
+*/
+function enforceTotalLimit(target) {
 
     let total = 0;
 
-    for (let key in pointData) {
-        total += pointData[key];
+    const stats = state.points[target];
+
+    for (let k in stats) {
+        total += stats[k];
     }
 
-    return total;
+    if (total <= MAX_TOTAL_POINTS) return;
+
+    // 超えたら削る（最後に変更した分を優先的に減らす簡易処理）
+    for (let k in stats) {
+        if (stats[k] > 0) {
+            stats[k]--;
+            break;
+        }
+    }
 }
 
 /*
 -----------------------------------------
-ポイント更新（後でスライダーと連動）
+能力値計算（最終）
 -----------------------------------------
 */
-function setPoint(stat, value) {
+function calcStat(base, target, stat, nature = 1.0) {
 
-    if (!stats.includes(stat)) return;
+    const bonus = state.points[target][stat] || 0;
 
-    if (value < 0) value = 0;
-    if (value > MAX_PER_STAT) value = MAX_PER_STAT;
-
-    pointData[stat] = value;
-
-    // 合計制限チェック（超えたら戻す）
-    if (getTotalPoints() > MAX_TOTAL_POINTS) {
-        pointData[stat] -= 1;
-    }
-
-    console.log("ポイント更新:", pointData);
-}
-
-/*
------------------------------------------
-能力値計算（ここが本体）
------------------------------------------
-*/
-function calcHP(base) {
-    return base + 75 + pointData.hp;
-}
-
-function calcStat(base, stat, natureMultiplier = 1.0) {
-
-    let value = (base + 20 + pointData[stat]) * natureMultiplier;
+    let value = (base + 20 + bonus) * nature;
 
     return Math.floor(value);
+}
+
+/*
+-----------------------------------------
+HP専用
+-----------------------------------------
+*/
+function calcHP(base, target) {
+
+    const bonus = state.points[target].hp || 0;
+
+    return base + 75 + bonus;
+}
+
+/*
+-----------------------------------------
+UI更新（呼び出し用）
+-----------------------------------------
+*/
+function updateUIStats(target) {
+
+    const el = document.getElementById(target + "Stats");
+
+    if (!el) return;
+
+    const points = state.points[target];
+
+    let total = 0;
+
+    for (let k in points) {
+        total += points[k];
+    }
+
+    el.innerHTML = `
+        <div style="margin-top:10px;">
+            <b>合計ポイント:</b> ${total} / ${MAX_TOTAL_POINTS}
+        </div>
+    `;
+}
+
+/*
+-----------------------------------------
+外部公開用API
+-----------------------------------------
+*/
+function getState() {
+    return state;
 }
