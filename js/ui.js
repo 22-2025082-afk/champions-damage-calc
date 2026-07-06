@@ -1,7 +1,7 @@
 /*
 =========================================
-ui.js（強化版）
-Pokémon Champions UI
+ui.js（仕上げ版）
+Pokémon Champions UI System
 Version 0.1.0
 =========================================
 */
@@ -15,9 +15,10 @@ window.addEventListener("load", initUI);
 */
 function initUI() {
 
-    console.log("UI init");
+    console.log("UI init complete");
 
     setupStatsUI();
+    bindGlobalEvents();
     updateAllUI();
 }
 
@@ -28,15 +29,13 @@ function initUI() {
 */
 function setupStatsUI() {
 
-    const targets = ["attacker", "defender"];
+    ["attacker", "defender"].forEach(target => {
 
-    targets.forEach(t => {
-
-        const el = document.getElementById(t + "Stats");
+        const el = document.getElementById(target + "Stats");
 
         if (!el) return;
 
-        el.innerHTML = createStatUI(t);
+        el.innerHTML = createStatUI(target);
     });
 }
 
@@ -85,10 +84,24 @@ function createStatUI(target) {
 
 /*
 -----------------------------------------
-イベント登録
+イベントまとめ管理
 -----------------------------------------
 */
-document.addEventListener("input", (e) => {
+function bindGlobalEvents() {
+
+    // スライダー
+    document.addEventListener("input", handleSliderInput);
+
+    // ポケモン入力
+    bindPokemonInputs();
+}
+
+/*
+-----------------------------------------
+スライダー処理
+-----------------------------------------
+*/
+function handleSliderInput(e) {
 
     if (e.target.type !== "range") return;
 
@@ -96,17 +109,58 @@ document.addEventListener("input", (e) => {
     const target = e.target.dataset.target;
     const value = Number(e.target.value);
 
-    if (typeof setPoint === "function") {
-        setPoint(target, stat, value);
-    }
+    setPoint(target, stat, value);
 
     updateStatLabel(target, stat, value);
+
     updateAllUI();
-});
+}
 
 /*
 -----------------------------------------
-数値更新
+ポケモン入力バインド
+-----------------------------------------
+*/
+function bindPokemonInputs() {
+
+    const attacker = document.getElementById("attackerPokemon");
+    const defender = document.getElementById("defenderPokemon");
+
+    if (attacker) {
+        attacker.addEventListener("change", () => {
+            handlePokemon("attacker", attacker.value);
+        });
+    }
+
+    if (defender) {
+        defender.addEventListener("change", () => {
+            handlePokemon("defender", defender.value);
+        });
+    }
+}
+
+/*
+-----------------------------------------
+ポケモン反映
+-----------------------------------------
+*/
+function handlePokemon(target, name) {
+
+    const p = getPokemon(name);
+
+    if (!p) {
+        console.log("ポケモン未発見:", name);
+        return;
+    }
+
+    setPokemon(target, p);
+
+    updateAllUI();
+}
+
+/*
+-----------------------------------------
+ラベル更新
 -----------------------------------------
 */
 function updateStatLabel(target, stat, value) {
@@ -131,6 +185,7 @@ function updateAllUI() {
 
     updatePointDisplay(state);
     updatePokemonDisplay(state);
+    updateDamageDisplay(state);
 }
 
 /*
@@ -154,19 +209,15 @@ function updatePointDisplay(state) {
             total += points[k];
         }
 
-        const info = el.querySelector(".stat-block");
+        let info = el.querySelector(".point-info");
 
-        if (info) {
-            let old = el.querySelector(".point-info");
-
-            if (!old) {
-                old = document.createElement("div");
-                old.className = "point-info";
-                info.prepend(old);
-            }
-
-            old.textContent = `合計ポイント: ${total} / 66`;
+        if (!info) {
+            info = document.createElement("div");
+            info.className = "point-info";
+            el.prepend(info);
         }
+
+        info.textContent = `合計ポイント: ${total} / 66`;
     });
 }
 
@@ -195,4 +246,35 @@ function updatePokemonDisplay(state) {
             <p>防御側: ${def.name}</p>
         </div>
     `;
+}
+
+/*
+-----------------------------------------
+ダメージ表示（統合）
+-----------------------------------------
+*/
+function updateDamageDisplay(state) {
+
+    const atk = state.pokemon.attacker;
+    const def = state.pokemon.defender;
+
+    if (!atk || !def) return;
+
+    const attack = calcStat(atk.attack, "attacker", "attack", 1.0);
+    const defense = calcStat(def.defense, "defender", "defense", 1.0);
+
+    const dmg = calcDamage({
+        level: 50,
+        power: 80,
+        attack,
+        defense,
+        stab: 1.0,
+        type: 1.0,
+        random: true
+    });
+
+    showDamageResult(
+        Math.floor(dmg * 0.85),
+        dmg
+    );
 }
